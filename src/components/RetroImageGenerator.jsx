@@ -3,6 +3,7 @@ import { Loader2, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion'
 import { generateImage } from '../services/api';
 // import { generateImage } from '../services/apiCova';
+import { AsciiTitle } from './AsciiTitle';
 
 export const RetroImageGenerator = () => {
     const [transcript, setTranscript] = useState("");
@@ -101,7 +102,16 @@ export const RetroImageGenerator = () => {
     return (
         <div className="flex flex-col h-screen bg-black text-green-500 p-4 font-mono">
             <div className="flex-1 overflow-auto mb-4">
+                <AsciiTitle />
+
                 <p>{'> Speech recognition ' + (isListening ? 'active' : 'inactive')}</p>
+                {isListening && (
+                    <div className="flex items-center mb-4">
+                        <div className="bg-red-600 rounded-full w-3 h-3 mr-2 animate-pulse"></div>
+                        <span className="text-red-600 font-semibold">{('live')}</span>
+                    </div>
+                )}
+                <p>{'> Di el comando: genera una imagen...'}</p>
                 {transcript && <p>{'> ' + transcript}</p>}
 
                 {isGenerating && (

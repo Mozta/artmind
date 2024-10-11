@@ -29,9 +29,9 @@ export const translateText = async (text) => {
     }
 };
 
-export const generateImage = async (text) => {
+export const generateImage = async (prompt) => {
     try {
-        const response = await axios.post(`${API_BASE_URL}/generate-image-with-logo`, { text });
+        const response = await axios.post(`${API_BASE_URL}/generate-image-with-logo`, { prompt });
         const { firebase_url, prompt } = response.data;
         console.log(firebase_url);
         return {
