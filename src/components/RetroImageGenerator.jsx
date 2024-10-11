@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader2, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion'
-import { generateImage } from '../services/api';
-// import { generateImage } from '../services/apiCova';
+// import { generateImage } from '../services/api';
+import { generateImage } from '../services/apiCova';
 import { AsciiTitle } from './AsciiTitle';
 
 export const RetroImageGenerator = () => {
@@ -75,6 +75,24 @@ export const RetroImageGenerator = () => {
         setIsListening(!isListening);
     };
 
+    // Componente de Loading
+    const LoadingAnimation = () => (
+        <motion.div 
+            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+        >
+            <motion.div 
+                className="text-green-500 text-4xl font-mono"
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ repeat: Infinity, duration: 1.5 }}
+            >
+                Generando tu imagen 🪄...
+            </motion.div>
+        </motion.div>
+    );
+
     const handleImageGeneration = async (prompt) => {
         setIsGenerating(true);
         setImage("");
@@ -115,16 +133,17 @@ export const RetroImageGenerator = () => {
                 <p>{'> Di el comando: genera una imagen...'}</p>
                 {transcript && <p>{'> ' + transcript}</p>}
 
-                {isGenerating && (
-                    <p>{'> ' + 'Generando imagen...'}</p>
-                )}
-
                 {revisedPrompt && (
                     <p className="text-xs bg-green-900 p-2 rounded">
                         {'> ' + revisedPrompt}
                     </p>
                 )}
             </div>
+
+            {/* Animación de Loading */}
+            <AnimatePresence>
+                {isGenerating && <LoadingAnimation />}
+            </AnimatePresence>
 
             {/* Modal para mostrar la imagen generada */}
             <AnimatePresence>
@@ -153,7 +172,7 @@ export const RetroImageGenerator = () => {
                             )}
                             <div className="flex justify-end">
                                 <button
-                                    onClick={handleCloseModal} // Usar la nueva función para cerrar y continuar
+                                    onClick={handleCloseModal}
                                     className="bg-red-600 text-white px-4 py-2 rounded"
                                 >
                                     Cerrar
@@ -166,7 +185,7 @@ export const RetroImageGenerator = () => {
 
             <button
                 onClick={toggleListening}
-                className={`${isListening ? 'bg-red-500' : 'bg-green-500'} text-black px-4 py-2 rounded transition-all duration-300`}
+                className={`${isListening ? 'bg-red-500' : 'bg-green-500'} text-black mx-12 px-4 py-4 rounded transition-all duration-300`}
             >
                 {isListening ? 'Stop Listening' : 'Start Listening'}
             </button>

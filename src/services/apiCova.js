@@ -29,14 +29,14 @@ export const translateText = async (text) => {
     }
 };
 
-export const generateImage = async (received_prompt) => {
+export const generateImage = async (prompt) => {
     try {
-        const response = await axios.post(`${API_BASE_URL}/generate-image-with-logo`, { received_prompt });
-        const { firebase_url, received_prompt_ } = response.data;
+        const response = await axios.post(`${API_BASE_URL}/generate-image-with-logo`, { prompt });
+        const { firebase_url, revised_prompt } = response.data;
         console.log(firebase_url);
         return {
             imageUrl: firebase_url,
-            revisedPrompt: received_prompt_,
+            revisedPrompt: revised_prompt,
         };
     } catch (error) {
         console.error('Error generating image:', error);
