@@ -11,9 +11,9 @@ export const RetroImageGenerator = () => {
     const [image, setImage] = useState("");
     const [revisedPrompt, setRevisedPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const recognitionRef = useRef(null);
 
-    // Nuevo transcript final
     let finalTranscriptRef = useRef('');
     let timeoutRef = useRef(null);
 
@@ -22,40 +22,32 @@ export const RetroImageGenerator = () => {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognitionRef.current = new SpeechRecognition();
             recognitionRef.current.continuous = true;
-            recognitionRef.current.interimResults = true; // Mostrar resultados en tiempo real
+            recognitionRef.current.interimResults = true;
 
             recognitionRef.current.onresult = (event) => {
                 let interimTranscript = '';
 
-                // Recorre los resultados
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript;
 
                     if (event.results[i].isFinal) {
-                        // Si es final, almacena en el transcript final
                         finalTranscriptRef.current += transcript;
-
-                        // Configura un temporizador para reiniciar el transcript si el usuario ha dejado de hablar
                         clearTimeout(timeoutRef.current);
                         timeoutRef.current = setTimeout(() => {
-                            setTranscript(''); // Limpia el transcript en la interfaz
-                            finalTranscriptRef.current = ''; // Reinicia el transcript final
-                        }, 2000); // 2 segundos después de que el usuario deja de hablar
-
+                            setTranscript('');
+                            finalTranscriptRef.current = '';
+                        }, 2000);
                     } else {
-                        // Muestra los resultados intermedios en tiempo real
                         interimTranscript += transcript;
                     }
                 }
 
-                // Actualiza el estado para mostrar el texto en tiempo real
                 setTranscript(finalTranscriptRef.current + interimTranscript);
 
-                // Si el comando para generar la imagen es detectado, genera la imagen
                 if (finalTranscriptRef.current.toLowerCase().includes('genera una imagen')) {
                     const prompt = finalTranscriptRef.current.replace('genera una imagen', '').trim();
                     handleImageGeneration(prompt);
-                    finalTranscriptRef.current = ''; // Reinicia después de generar la imagen
+                    finalTranscriptRef.current = '';
                 }
             };
 
@@ -70,7 +62,7 @@ export const RetroImageGenerator = () => {
             if (recognitionRef.current) {
                 recognitionRef.current.stop();
             }
-            clearTimeout(timeoutRef.current); // Limpia el temporizador al desmontar el componente
+            clearTimeout(timeoutRef.current);
         };
     }, []);
 
@@ -90,6 +82,7 @@ export const RetroImageGenerator = () => {
             const { imageUrl, revisedPrompt } = await generateImage(prompt);
             setImage(imageUrl);
             setRevisedPrompt(revisedPrompt);
+            setIsModalOpen(true); // Abre el modal cuando la imagen esté lista
         } catch (error) {
             console.error('Error generating image:', error);
         } finally {
@@ -98,6 +91,14 @@ export const RetroImageGenerator = () => {
         }
     };
 
+    // Función para cerrar el modal y continuar escuchando si es necesario
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        // Verificar si el reconocimiento de voz sigue activo, si es así, reiniciarlo
+        if (isListening && recognitionRef.current) {
+            recognitionRef.current.start(); // Reiniciar el reconocimiento si estaba activo
+        }
+    };
 
     return (
         <div className="flex flex-col h-screen bg-black text-green-500 p-4 font-mono">
@@ -123,39 +124,52 @@ export const RetroImageGenerator = () => {
                         {'> ' + revisedPrompt}
                     </p>
                 )}
+            </div>
 
-            </div>
-            <div className="flex flex-col items-center justify-center mb-4">
-                {isGenerating ? (
-                    <>
-                        <div className="flex-1 overflow-auto mb-4">
-                            {<p>{'> ' + 'Generando imagen...'}</p>}
-                        </div>
-                        <div className="flex items-center justify-center border border-green-500 h-64 w-64">
-                            <Loader2 className="h-12 w-12 animate-spin" />
-                        </div>
-                    </>
-                ) : image ? (
-                    <div className="flex flex-col items-center">
-                        <img src={image} alt="Generated image" className="w-64 h-64 object-cover mb-4" />
-                        <div className="flex items-center bg-green-900 p-2 rounded">
-                            <Download className="mr-2" size={16} />
-                            <span className="text-xs break-all">{image}</span>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="flex items-center justify-center border border-green-500 h-64 w-64">
-                        <p>Image will appear here</p>
-                    </div>
+            {/* Modal para mostrar la imagen generada */}
+            <AnimatePresence>
+                {isModalOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.3 }}
+                        className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80"
+                    >
+                        <motion.div
+                            className="bg-green-900 p-4 rounded-lg shadow-lg max-w-lg w-full border-2 border-green-500"
+                            initial={{ y: -50, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 50, opacity: 0 }}
+                            transition={{ duration: 0.5 }}
+                        >
+                            <h2 className="text-lg font-bold mb-2 text-center text-green-500 font-mono">
+                                Imagen Generada
+                            </h2>
+                            {image && (
+                                <div className="p-2 border border-green-500 bg-black mb-4">
+                                    <img src={image} alt="Generated" className="w-full h-auto object-cover rounded" />
+                                </div>
+                            )}
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={handleCloseModal} // Usar la nueva función para cerrar y continuar
+                                    className="bg-red-600 text-white px-4 py-2 rounded"
+                                >
+                                    Cerrar
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
                 )}
-            </div>
+            </AnimatePresence>
+
             <button
                 onClick={toggleListening}
                 className={`${isListening ? 'bg-red-500' : 'bg-green-500'} text-black px-4 py-2 rounded transition-all duration-300`}
             >
                 {isListening ? 'Stop Listening' : 'Start Listening'}
             </button>
-
         </div>
     );
 };
